@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS bookings (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    event_id UUID NOT NULL,
+    quantity INTEGER NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -5,7 +5,8 @@
     "main": "src/app.js",
     "scripts": {
         "start": "node src/app.js",
-        "dev": "nodemon src/app.js"
+        "dev": "nodemon src/app.js",
+        "migrate": "node -e \"require('./src/config/migrationRunner').runMigrations().then(() => process.exit(0)).catch(() => process.exit(1))\""
     },
     "dependencies": {
         "express": "^4.18.2",

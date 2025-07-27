@@ -1,11 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../config/database');
 const axios = require('axios');
+const { validate: isUUID } = require('uuid');
 
 const bookingService = {
     async createBooking(user_id, event_id, quantity) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
 
@@ -26,7 +27,7 @@ const bookingService = {
 
             const insertBookingQuery = `
                 INSERT INTO bookings (id, user_id, event_id, quantity, total_amount, status)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6)
                 RETURNING *
             `;
 
@@ -54,7 +55,7 @@ const bookingService = {
             SELECT b.*, e.title as event_title, e.venue, e.event_date
             FROM bookings b
             JOIN events e ON b.event_id = e.id
-            WHERE b.user_id = $1
+            WHERE b.user_id = $1::uuid
             ORDER BY b.created_at DESC
         `;
 
@@ -67,11 +68,11 @@ const bookingService = {
             SELECT b.*, e.title as event_title, e.venue, e.event_date
             FROM bookings b
             JOIN events e ON b.event_id = e.id
-            WHERE b.id = $1 AND b.user_id = $2
+            WHERE b.id = $1::uuid AND b.user_id = $2::uuid
         `;
 
         const result = await pool.query(query, [booking_id, user_id]);
-        
+
         if (result.rows.length === 0) {
             throw new Error('Booking not found');
         }
@@ -81,12 +82,25 @@ const bookingService = {
 
     async confirmBooking(booking_id, user_id) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
+            console.log(booking_id);
+            console.log(user_id);
 
+            if (!isUUID(user_id)) {
+                throw new Error('Invalid user_id format');
+            }
+
+
+            if (!isUUID(booking_id)) {
+                throw new Error('Invalid booking_id format');
+            }
             const booking = await this.getBookingById(booking_id, user_id);
-            
+
+            //  log
+            console.log(booking);
+
             if (booking.status !== 'pending') {
                 throw new Error('Booking is not in pending status');
             }
@@ -94,9 +108,13 @@ const bookingService = {
             const updateQuery = `
                 UPDATE bookings 
                 SET status = 'confirmed', updated_at = CURRENT_TIMESTAMP
-                WHERE id = $1 AND user_id = $2
+                WHERE id = $1::uuid AND user_id = $2::uuid
                 RETURNING *
             `;
+
+            console.log("trigger")
+
+            console.log(updateQuery);
 
             const result = await client.query(updateQuery, [booking_id, user_id]);
 
@@ -121,12 +139,12 @@ const bookingService = {
 
     async cancelBooking(booking_id, user_id) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
 
             const booking = await this.getBookingById(booking_id, user_id);
-            
+
             if (booking.status === 'cancelled') {
                 throw new Error('Booking is already cancelled');
             }
@@ -134,7 +152,7 @@ const bookingService = {
             const updateQuery = `
                 UPDATE bookings 
                 SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
-                WHERE id = $1 AND user_id = $2
+                WHERE id = $1::uuid AND user_id = $2::uuid
             `;
 
             await client.query(updateQuery, [booking_id, user_id]);
