@@ -14,6 +14,10 @@ app.use(express.json());
 
 app.use('/api/v1', bookingRoutes);
 
+app.get('/', (req, res) => {
+    res.json({ message: 'Welcome to Booking Service API' });
+});
+
 app.get('/health', (req, res) => {
     res.json({ status: 'Booking service is running' });
 });
