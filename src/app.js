@@ -22,7 +22,6 @@ app.get('/health', (req, res) => {
     res.json({ status: 'Booking service is running' });
 });
 
-// Run migrations before starting the server
 (async () => {
     try {
         await runMigrations();
